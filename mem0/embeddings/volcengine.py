@@ -48,9 +48,14 @@ class VolcengineEmbedding(EmbeddingBase):
         )
 
         data: Any = response.data
+        if hasattr(data, "embedding"):
+            return cast(List[float], getattr(data, "embedding"))
         if isinstance(data, dict):
             return cast(List[float], data.get("embedding", []))
         if isinstance(data, list) and data:
-            first_item: Dict[str, Any] = cast(Dict[str, Any], data[0])
-            return cast(List[float], first_item.get("embedding", []))
+            first_item: Any = data[0]
+            if isinstance(first_item, dict):
+                return cast(List[float], first_item.get("embedding", []))
+            if hasattr(first_item, "embedding"):
+                return cast(List[float], getattr(first_item, "embedding"))
         return []

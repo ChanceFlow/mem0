@@ -67,3 +67,18 @@ def test_embed_removes_newlines(mock_volcengine_embedding_client: Mock) -> None:
         input=[{"text": "Hello world", "type": "text"}],
     )
     assert result == [0.7, 0.8, 0.9]
+
+
+def test_embed_handles_sdk_object_payload(mock_volcengine_embedding_client: Mock) -> None:
+    """Verify embedding parsing when SDK returns object-style data.embedding."""
+    config: BaseEmbedderConfig = BaseEmbedderConfig()
+    embedder: VolcengineEmbedding = VolcengineEmbedding(config)
+    mock_data: Mock = Mock()
+    mock_data.embedding = [1.1, 1.2, 1.3]
+    mock_response: Mock = Mock()
+    mock_response.data = mock_data
+    mock_volcengine_embedding_client.multimodal_embeddings.create.return_value = mock_response
+
+    result: list[float] = embedder.embed("Object payload")
+
+    assert result == [1.1, 1.2, 1.3]
