@@ -101,6 +101,10 @@ export function FormView({ settings, onChange }: FormViewProps) {
   const needsEmbedderApiKey = settings.mem0?.embedder?.provider?.toLowerCase() !== "ollama"
   const isLlmOllama = settings.mem0?.llm?.provider?.toLowerCase() === "ollama"
   const isEmbedderOllama = settings.mem0?.embedder?.provider?.toLowerCase() === "ollama"
+  const isLlmVolcengine = settings.mem0?.llm?.provider?.toLowerCase() === "volcengine"
+  const isEmbedderVolcengine = settings.mem0?.embedder?.provider?.toLowerCase() === "volcengine"
+  const llmApiKeyHint = isLlmVolcengine ? 'env:ARK_API_KEY' : 'env:API_KEY'
+  const embedderApiKeyHint = isEmbedderVolcengine ? 'env:ARK_API_KEY' : 'env:API_KEY'
 
   const LLM_PROVIDERS = {
     "OpenAI": "openai",
@@ -118,6 +122,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
     "xAI": "xai",
     "LM Studio": "lmstudio",
     "LangChain": "langchain",
+    "Volcengine Ark": "volcengine",
   }
 
   const EMBEDDER_PROVIDERS = {
@@ -131,6 +136,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
     "Together": "together",
     "LangChain": "langchain",
     "AWS Bedrock": "aws_bedrock",
+    "Volcengine Ark": "volcengine",
   }
 
   return (
@@ -209,6 +215,21 @@ export function FormView({ settings, onChange }: FormViewProps) {
             </div>
           )}
 
+          {isLlmVolcengine && (
+            <div className="space-y-2">
+              <Label htmlFor="llm-ark-url">Ark Base URL</Label>
+              <Input
+                id="llm-ark-url"
+                placeholder="https://ark.cn-beijing.volces.com/api/v3"
+                value={settings.mem0?.llm?.config?.ark_base_url || ""}
+                onChange={(e) => handleLlmConfigChange("ark_base_url", e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Leave empty to use default Volcengine Ark endpoint.
+              </p>
+            </div>
+          )}
+
           {needsLlmApiKey && (
             <div className="space-y-2">
               <Label htmlFor="llm-api-key">API Key</Label>
@@ -216,7 +237,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
                 <Input
                   id="llm-api-key"
                   type={showLlmApiKey ? "text" : "password"}
-                  placeholder="env:API_KEY"
+                  placeholder={llmApiKeyHint}
                   value={settings.mem0?.llm?.config?.api_key || ""}
                   onChange={(e) => handleLlmConfigChange("api_key", e.target.value)}
                 />
@@ -231,7 +252,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Use "env:API_KEY" to load from environment variable, or enter directly
+                {`Use "${llmApiKeyHint}" to load from environment variable, or enter directly`}
               </p>
             </div>
           )}
@@ -323,6 +344,21 @@ export function FormView({ settings, onChange }: FormViewProps) {
             </div>
           )}
 
+          {isEmbedderVolcengine && (
+            <div className="space-y-2">
+              <Label htmlFor="embedder-ark-url">Ark Base URL</Label>
+              <Input
+                id="embedder-ark-url"
+                placeholder="https://ark.cn-beijing.volces.com/api/v3"
+                value={settings.mem0?.embedder?.config?.ark_base_url || ""}
+                onChange={(e) => handleEmbedderConfigChange("ark_base_url", e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Leave empty to use default Volcengine Ark endpoint.
+              </p>
+            </div>
+          )}
+
           {needsEmbedderApiKey && (
             <div className="space-y-2">
               <Label htmlFor="embedder-api-key">API Key</Label>
@@ -330,7 +366,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
                 <Input
                   id="embedder-api-key"
                   type={showEmbedderApiKey ? "text" : "password"}
-                  placeholder="env:API_KEY"
+                  placeholder={embedderApiKeyHint}
                   value={settings.mem0?.embedder?.config?.api_key || ""}
                   onChange={(e) => handleEmbedderConfigChange("api_key", e.target.value)}
                 />
@@ -345,7 +381,7 @@ export function FormView({ settings, onChange }: FormViewProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Use "env:API_KEY" to load from environment variable, or enter directly
+                {`Use "${embedderApiKeyHint}" to load from environment variable, or enter directly`}
               </p>
             </div>
           )}

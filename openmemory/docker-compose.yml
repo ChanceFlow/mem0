@@ -4,7 +4,7 @@ services:
     ports:
       - "6333:6333"
     volumes:
-      - mem0_storage:/mem0/storage
+      - ./data/qdrant:/mem0/storage
   openmemory-mcp:
     image: mem0/openmemory-mcp
     build: api/
@@ -32,5 +32,3 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_USER_ID=${USER}
 
-volumes:
-  mem0_storage:

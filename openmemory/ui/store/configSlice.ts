@@ -6,6 +6,7 @@ export interface LLMConfig {
   max_tokens: number;
   api_key?: string;
   ollama_base_url?: string;
+  ark_base_url?: string;
 }
 
 export interface LLMProvider {
@@ -17,6 +18,7 @@ export interface EmbedderConfig {
   model: string;
   api_key?: string;
   ollama_base_url?: string;
+  ark_base_url?: string;
 }
 
 export interface EmbedderProvider {

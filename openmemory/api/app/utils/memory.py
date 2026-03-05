@@ -126,6 +126,27 @@ def _fix_ollama_urls(config_section):
     return config_section
 
 
+def _apply_volcengine_defaults(config_section: dict) -> dict:
+    """
+    Apply Volcengine Ark defaults while preserving explicit user configuration.
+
+    Args:
+        config_section: Provider configuration section containing `provider` and `config`.
+
+    Returns:
+        Updated provider configuration section.
+    """
+    if not config_section or config_section.get("provider") != "volcengine":
+        return config_section
+
+    provider_config: dict = config_section.setdefault("config", {})
+    if "api_key" not in provider_config and os.environ.get("ARK_API_KEY"):
+        provider_config["api_key"] = "env:ARK_API_KEY"
+    if "ark_base_url" not in provider_config and os.environ.get("ARK_BASE_URL"):
+        provider_config["ark_base_url"] = "env:ARK_BASE_URL"
+    return config_section
+
+
 def reset_memory_client():
     """Reset the global memory client to force reinitialization with new config."""
     global _memory_client, _config_hash
@@ -331,6 +352,7 @@ def get_memory_client(custom_instructions: str = None):
                         # Fix Ollama URLs for Docker if needed
                         if config["llm"].get("provider") == "ollama":
                             config["llm"] = _fix_ollama_urls(config["llm"])
+                        config["llm"] = _apply_volcengine_defaults(config["llm"])
                     
                     # Update Embedder configuration if available
                     if "embedder" in mem0_config and mem0_config["embedder"] is not None:
@@ -339,6 +361,7 @@ def get_memory_client(custom_instructions: str = None):
                         # Fix Ollama URLs for Docker if needed
                         if config["embedder"].get("provider") == "ollama":
                             config["embedder"] = _fix_ollama_urls(config["embedder"])
+                        config["embedder"] = _apply_volcengine_defaults(config["embedder"])
 
                     if "vector_store" in mem0_config and mem0_config["vector_store"] is not None:
                         config["vector_store"] = mem0_config["vector_store"]
