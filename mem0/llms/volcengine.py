@@ -75,6 +75,37 @@ class VolcengineLLM(LLMBase):
             return processed_response
         return message.content
 
+    def _should_retry_without_response_format(self, error: Exception, response_format: Optional[Any]) -> bool:
+        """
+        Decide whether to retry without `response_format`.
+
+        Args:
+            error: Raised exception from Ark client request.
+            response_format: Requested response format.
+
+        Returns:
+            True if the request should be retried without response_format.
+        """
+        if not response_format:
+            return False
+
+        if not isinstance(response_format, dict):
+            return False
+
+        response_format_type: Optional[str] = response_format.get("type")
+        if response_format_type not in {"json_object", "json_schema"}:
+            return False
+
+        error_message: str = str(error).lower()
+        unsupported_markers: List[str] = [
+            "response_format.type",
+            "json_object is not supported",
+            "json_schema is not supported",
+            "not support response_format",
+            "invalidparameter",
+        ]
+        return any(marker in error_message for marker in unsupported_markers)
+
     def generate_response(
         self,
         messages: List[Dict[str, str]],
@@ -110,5 +141,13 @@ class VolcengineLLM(LLMBase):
             params["tools"] = tools
             params["tool_choice"] = tool_choice
 
-        response: Any = self.client.chat.completions.create(**params)
+        try:
+            response: Any = self.client.chat.completions.create(**params)
+        except Exception as error:
+            if self._should_retry_without_response_format(error=error, response_format=response_format):
+                fallback_params: Dict[str, Any] = dict(params)
+                fallback_params.pop("response_format", None)
+                response = self.client.chat.completions.create(**fallback_params)
+            else:
+                raise
         return self._parse_response(response, tools)

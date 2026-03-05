@@ -116,3 +116,32 @@ def test_generate_response_with_tools(mock_volcengine_client: Mock) -> None:
     assert len(response["tool_calls"]) == 1
     assert response["tool_calls"][0]["name"] == "add_memory"
     assert response["tool_calls"][0]["arguments"] == {"data": "Today is a sunny day."}
+
+
+def test_generate_response_retries_without_response_format_on_unsupported_json(mock_volcengine_client: Mock) -> None:
+    """Retry without response_format when provider rejects json_object/json_schema."""
+    llm: VolcengineLLM = VolcengineLLM(
+        BaseLlmConfig(model="doubao-seed", temperature=0.7, max_tokens=100, top_p=1.0)
+    )
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "请提取事实"},
+    ]
+
+    mock_response: Mock = Mock()
+    mock_response.choices = [Mock(message=Mock(content='{"facts":["用户是 Chance"]}'))]
+    unsupported_error: Exception = Exception(
+        "Error code: 400 - {'error': {'code': 'InvalidParameter', 'message': "
+        "'The parameter `response_format.type` specified in the request are not valid: "
+        "`json_object` is not supported by this model.'}}"
+    )
+    mock_volcengine_client.chat.completions.create.side_effect = [unsupported_error, mock_response]
+
+    response: str = llm.generate_response(messages, response_format={"type": "json_object"})
+
+    assert mock_volcengine_client.chat.completions.create.call_count == 2
+    first_call_kwargs: dict[str, object] = mock_volcengine_client.chat.completions.create.call_args_list[0].kwargs
+    second_call_kwargs: dict[str, object] = mock_volcengine_client.chat.completions.create.call_args_list[1].kwargs
+    assert first_call_kwargs["response_format"] == {"type": "json_object"}
+    assert "response_format" not in second_call_kwargs
+    assert response == '{"facts":["用户是 Chance"]}'

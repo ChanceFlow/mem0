@@ -11,6 +11,12 @@ services:
     environment:
       - USER
       - API_KEY
+      - http_proxy=http://10.10.0.1:7890
+      - https_proxy=http://10.10.0.1:7890
+      - HTTP_PROXY=http://10.10.0.1:7890
+      - HTTPS_PROXY=http://10.10.0.1:7890
+      - no_proxy=localhost,127.0.0.1,mem0_store
+      - NO_PROXY=localhost,127.0.0.1,mem0_store
     env_file:
       - api/.env
     depends_on:
